@@ -21,3 +21,27 @@ export async function apply(req, res, next){
     next(error);
   }
 }
+
+export async function applicationList(req, res, next){
+  try {
+    const allowedStatuses = ['pending', 'approved', 'rejected'];
+    const status = req.query.status ?? 'pending';
+    if (!allowedStatuses.includes(status)) {
+      throw new HttpError(
+        400,
+        `status must be one of: ${allowedStatuses.join(', ')}`
+      );
+    }
+
+    const { limit, offset } = req.query;
+    const rows = await instructorApplicationService.applicationList({
+      status,
+      limit,
+      offset,
+    });
+
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+}

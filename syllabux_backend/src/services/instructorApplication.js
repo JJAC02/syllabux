@@ -26,3 +26,34 @@ export async function create({about_self,linkedin_url,years_of_experience,expert
   }
 }
 
+export async function applicationList({ status = 'pending', limit = 10, offset = 0 } = {}) {
+  const allowedStatuses = new Set(['pending', 'approved', 'rejected']);
+  if (!allowedStatuses.has(status)) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 200);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
+
+  const [rows] = await pool.execute(
+    `SELECT
+       ia.about_self,
+       ia.application_id,
+       ia.expertise_summary,
+       ia.linkedin_url,
+       ia.resume_link,
+       ia.submitted_at,
+       u.user_id,
+       CONCAT(u.first_name, ' ', u.last_name) AS name,
+       ad.status
+     FROM InstructorApplication ia
+     JOIN ApplicationDecision ad ON ia.application_id = ad.application_id
+     JOIN Users u ON ia.user_id = u.user_id
+     WHERE ad.status = ?
+     ORDER BY ia.submitted_at DESC
+     LIMIT ? OFFSET ?`,
+    [status, safeLimit, safeOffset]
+  );
+
+  return rows;
+}
