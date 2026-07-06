@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import crypto from 'crypto';
 
 const PUBLIC_COLUMNS =
   'user_id, first_name, last_name, email, role, created_at, updated_at';
@@ -51,4 +52,42 @@ export async function remove(id) {
     [id]
   );
   return result.affectedRows > 0;
+}
+
+export async function logout({user_id,remember_token}) {
+  if(!remember_token) {
+    return {
+      isLoggedOut:true,
+      message: "no token to remove"
+    }
+  }
+
+  const token_hash = crypto.createHash('sha256').update(remember_token).digest('hex');
+
+  try {
+      const [result] = await pool.query(`
+      DELETE FROM RememberTokens
+      WHERE token_hash = ?
+      AND user_id = ?
+    `,  
+    [token_hash,user_id]
+  );
+  if(result.affectedRows > 0){
+    return {
+      isLoggedOut: true,
+      message: 'Logged out successfully'
+    };
+  }else{
+    return {
+      isLoggedOut: false,
+      message: 'Token not found' //Eror 401
+    };
+  }
+  } catch (error) {
+      console.log("Failed to signout") //Eror 500
+      return {
+      isLoggedOut: false,
+      message: "Server Error"
+      };
+  }
 }
