@@ -76,6 +76,31 @@ paths:
           description: Validation error
         401:
           description: Invalid Credentials
+  /api/auth/logout:
+    post:
+      summary: Logout
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token,remember_token]
+              properties:
+                token:
+                  type: string
+                  example: 'Authentication: "Bearer [insert from login response here]'
+                remember_token:
+                  type: string
+                  example: "[insert from login response here]"
+      responses:
+        204:
+          description: Successful logout
+        400:
+          description: Validation error
+        401:
+          description: Invalid Credentials
   /api/auth/validatetoken:
     post:
       summary: Token validator

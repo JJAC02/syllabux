@@ -40,6 +40,25 @@ export async function login(req, res, next) {
   }
 }
 
+export async function logout(req, res, next) {
+  try {
+    const { remember_token } = req.body;
+    const result = await authService.logout({
+      user_id: req.user.sub,
+      remember_token,
+    });
+
+    if (!result.isLoggedOut) {
+      const status = result.message === 'Server Error' ? 500 : 401;
+      throw new HttpError(status, result.message);
+    }
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function tokenValidator(req, res, next) {
   try {
     const { token } = req.body ?? {};

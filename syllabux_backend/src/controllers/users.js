@@ -47,22 +47,3 @@ export async function remove(req, res, next) {
     next(err);
   }
 }
-
-export async function logout(req, res, next) {
-  try {
-    const { remember_token } = req.body;
-    const result = await usersService.logout({
-      user_id: req.user.sub,
-      remember_token,
-    });
-
-    if (!result.isLoggedOut) {
-      const status = result.message === 'Server Error' ? 500 : 401;
-      throw new HttpError(status, result.message);
-    }
-
-    res.status(204).end();
-  } catch (err) {
-    next(err);
-  }
-}
