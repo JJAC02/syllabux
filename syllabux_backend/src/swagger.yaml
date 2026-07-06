@@ -8,6 +8,13 @@ info:
 servers:
   - url: https://syllabux-api.dcism.org
     description: Production Development
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 paths:
   /api/auth/register:
     post:
@@ -128,3 +135,163 @@ paths:
           description: Submitted
         401:
           description: Failed to submit
+    get:
+      summary: List instructor applications (admin only)
+      tags: [Instructor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+            default: pending
+          description: Filter applications by their decision status
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 10
+          description: Maximum number of applications to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of applications to skip (for pagination)
+      responses:
+        200:
+          description: List of applications matching the given status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    application_id:
+                      type: integer
+                      example: 17
+                    user_id:
+                      type: integer
+                      example: 42
+                    name:
+                      type: string
+                      example: Jane Doe
+                    about_self:
+                      type: string
+                      example: "I'm a full-stack developer with a passion for teaching web technologies to beginners."
+                    linkedin_url:
+                      type: string
+                      example: "https://www.linkedin.com/in/jane-doe-dev"
+                    expertise_summary:
+                      type: string
+                      example: "Specializes in JavaScript, React, and Node.js."
+                    resume_link:
+                      type: string
+                      example: "https://example.com/resumes/jane-doe-resume.pdf"
+                    submitted_at:
+                      type: string
+                      format: date-time
+                    status:
+                      type: string
+                      enum: [pending, approved, rejected]
+                      example: pending
+        400:
+          description: Invalid status value
+        401:
+          description: Authentication required
+        403:
+          description: Insufficient permissions (admin only)
+  /api/instructors/students:
+    get:
+      summary: List students enrolled in the authenticated instructor's courses
+      tags: [Instructor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-indexed)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 10
+          description: Number of students per page
+      responses:
+        200:
+          description: Paginated list of students under the instructor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        instructor_id:
+                          type: integer
+                          example: 1
+                        instructor_name:
+                          type: string
+                          example: Juan Dela Cruz
+                        course_id:
+                          type: integer
+                          example: 5
+                        title:
+                          type: string
+                          example: Introduction to Programming
+                        description:
+                          type: string
+                          example: Learn the basics of programming.
+                        course_created_at:
+                          type: string
+                          format: date-time
+                        student_id:
+                          type: integer
+                          example: 12
+                        student_user_id:
+                          type: integer
+                          example: 42
+                        student_name:
+                          type: string
+                          example: Maria Santos
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      total:
+                        type: integer
+                        example: 47
+                      totalPages:
+                        type: integer
+                        example: 5
+        401:
+          description: Authentication required
+        403:
+          description: Insufficient permissions (not an instructor)
+        404:
+          description: Instructor profile not found
