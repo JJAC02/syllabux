@@ -320,3 +320,376 @@ paths:
           description: Insufficient permissions (not an instructor)
         404:
           description: Instructor profile not found
+  /api/courses:
+    get:
+      summary: List courses
+      description: |
+        Visibility rules: students see only `published` courses; instructors see their
+        own (any status) plus all published courses; admins see everything. Drafts
+        owned by other instructors are hidden.
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-indexed)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 10
+          description: Number of courses per page
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          description: Filter by course status
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced]
+          description: Filter by difficulty level
+        - in: query
+          name: category_id
+          required: false
+          schema:
+            type: integer
+          description: Filter by category ID
+        - in: query
+          name: instructor_id
+          required: false
+          schema:
+            type: integer
+          description: Filter by instructor ID
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Search in title and description
+      responses:
+        200:
+          description: Paginated list of courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        course_id:
+                          type: integer
+                          example: 1
+                        instructor_id:
+                          type: integer
+                          example: 1
+                        instructor_name:
+                          type: string
+                          example: Juan Dela Cruz
+                        title:
+                          type: string
+                          example: Introduction to Programming
+                        description:
+                          type: string
+                          example: Learn the basics of programming.
+                        duration_hours:
+                          type: number
+                          example: 10.5
+                        level:
+                          type: string
+                          example: beginner
+                        what_you_will_learn:
+                          type: string
+                          example: Variables, loops, functions, and basic algorithms.
+                        status:
+                          type: string
+                          example: published
+                        thumbnail_url:
+                          type: string
+                          example: https://example.com/thumb.jpg
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+                        categories:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              category_id:
+                                type: integer
+                                example: 1
+                              name:
+                                type: string
+                                example: Programming
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      total:
+                        type: integer
+                        example: 25
+                      totalPages:
+                        type: integer
+                        example: 3
+        401:
+          description: Authentication required
+    post:
+      summary: Create a new course
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description]
+              properties:
+                title:
+                  type: string
+                  example: Introduction to Node.js
+                description:
+                  type: string
+                  example: Learn how to build backend applications with Node.js and Express.
+                duration_hours:
+                  type: number
+                  example: 12.5
+                level:
+                  type: string
+                  enum: [beginner, intermediate, advanced]
+                  example: intermediate
+                what_you_will_learn:
+                  type: string
+                  example: Build REST APIs, handle authentication, and connect to databases.
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+                  default: draft
+                  example: draft
+                thumbnail_url:
+                  type: string
+                  example: https://example.com/course-thumb.jpg
+                category_ids:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 3]
+                  description: Array of category IDs to assign to this course
+      responses:
+        201:
+          description: Course created successfully
+        400:
+          description: Validation error
+        401:
+          description: Authentication required
+        403:
+          description: Insufficient permissions (instructor only)
+        404:
+          description: Instructor profile not found
+  /api/courses/{id}:
+    get:
+      summary: Get a single course by ID
+      description: |
+        Visibility rules: students receive `404` for any course whose status is not
+        `published`; instructors can read their own courses in any status; admins can
+        read everything. `404` is returned (instead of `403`) for non-owners to avoid
+        leaking course existence.
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Course ID
+      responses:
+        200:
+          description: Course details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  course_id:
+                    type: integer
+                    example: 1
+                  instructor_id:
+                    type: integer
+                    example: 1
+                  instructor_name:
+                    type: string
+                    example: Juan Dela Cruz
+                  title:
+                    type: string
+                    example: Introduction to Node.js
+                  description:
+                    type: string
+                    example: Learn how to build backend applications.
+                  duration_hours:
+                    type: number
+                    example: 12.5
+                  level:
+                    type: string
+                    example: intermediate
+                  what_you_will_learn:
+                    type: string
+                    example: Build REST APIs, handle authentication.
+                  status:
+                    type: string
+                    example: published
+                  thumbnail_url:
+                    type: string
+                    example: https://example.com/thumb.jpg
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category_id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: Programming
+        401:
+          description: Authentication required
+        404:
+          description: Course not found
+    put:
+      summary: Update a course (owner only)
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Course ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Advanced Node.js
+                description:
+                  type: string
+                  example: Updated description.
+                duration_hours:
+                  type: number
+                  example: 15.0
+                level:
+                  type: string
+                  enum: [beginner, intermediate, advanced]
+                  example: advanced
+                what_you_will_learn:
+                  type: string
+                  example: Master Node.js patterns.
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+                  example: published
+                thumbnail_url:
+                  type: string
+                  example: https://example.com/thumb-v2.jpg
+                category_ids:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 4]
+                  description: Replace all category assignments for this course
+      responses:
+        200:
+          description: Course updated
+        400:
+          description: Validation error
+        401:
+          description: Authentication required
+        404:
+          description: Course not found (or you are not the owner)
+    delete:
+      summary: Delete a course (owner only)
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Course ID
+      responses:
+        204:
+          description: Course deleted
+        401:
+          description: Authentication required
+        404:
+          description: Course not found (or you are not the owner)
+        409:
+          description: Cannot delete a course with enrolled students — archive it instead
+  /api/categories:
+    get:
+      summary: List all categories
+      tags: [Categories]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category_id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: Programming
+                    description:
+                      type: string
+                      example: Courses related to software development
+        401:
+          description: Authentication required
