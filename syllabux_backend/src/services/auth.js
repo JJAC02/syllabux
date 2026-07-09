@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 import { getByEmail } from './users.js';
 import crypto from 'crypto';
+import { PoolConnection } from 'mysql2';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -14,18 +15,34 @@ export async function register({
   role,
 }) {
   const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      `INSERT INTO Users (first_name, last_name, email, password_hash, role)
+      VALUES (?, ?, ?, ?, ?)`,
+      [first_name, last_name, email, password_hash, role]
+    );
+    const [rows] = await conn.query(
+      'SELECT user_id, first_name, last_name, email, role FROM Users WHERE user_id = ?',
+      [result.insertId]
+    );
+    
+    const student = rows[0];
+    await conn.query(
+      `INSERT INTO Students (user_id) VALUES (?)`, [student.user_id]
+    );
+    
+    await conn.commit();
+    return rows[0];
 
-  const [result] = await pool.query(
-    `INSERT INTO Users (first_name, last_name, email, password_hash, role)
-     VALUES (?, ?, ?, ?, ?)`,
-    [first_name, last_name, email, password_hash, role]
-  );
-
-  const [rows] = await pool.query(
-    'SELECT user_id, first_name, last_name, email, role FROM Users WHERE user_id = ?',
-    [result.insertId]
-  );
-  return rows[0];
+  } catch (error) {
+    await conn.rollback();
+      console.error(`Error: ${error}`);
+      throw error
+  } finally{
+    conn.release();
+  }
 }
 
 export async function login({ email, password, remember_me}) {

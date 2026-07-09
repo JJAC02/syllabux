@@ -14,6 +14,7 @@ export async function loadStudent({
         WHERE u.user_id = ? AND u.role = ?`,
         [userId, userRole]
     );
+    console.log(rows);
     return rows[0] ?? null;
 }
 
@@ -31,6 +32,7 @@ export async function loadDashboard(userId) {
         WHERE s.user_id = ?`,
         [userId]
     );
+    console.log(rows);
     return rows;
 }
 
@@ -62,6 +64,7 @@ export async function enrollStudent({ userId, course_id }) {
         VALUES (?, ?, CURDATE(), 0, 'active')`,
         [student.student_id, course_id]
     );
+    console.log(result,student);
  
     return {
         enrollment_id: result.insertId,

@@ -5,6 +5,7 @@ export async function loadStudent(req, res, next) {
     try {
         const userId = req.user?.sub;
         const userRole = req.user?.role;
+        console.log(userId,userRole);
         const result = await studentsService.loadStudent({
             userId,
             userRole,
