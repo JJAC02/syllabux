@@ -1,5 +1,6 @@
 import * as studentsService from '../services/students.js';
 import { HttpError } from '../utils/httpError.js';
+// import { get } from '../services/users.js';
  
 export async function loadStudent(req, res, next) {
     try {
@@ -46,6 +47,45 @@ export async function enrollStudent(req, res, next) {
         });
  
         res.status(201).json(result);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function deleteStudent(req, res, next) {
+    try {
+        const { user_id, first_name, last_name } = req.body;
+ 
+        if (!user_id || !first_name || !last_name) {
+            throw new HttpError(400, 'user_id, first_name, and last_name are required');
+        }
+ 
+        await studentsService.deleteStudent({
+            user_id,
+            first_name,
+            last_name,
+        });
+ 
+        res.status(204).end();
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function updateStudentDetails(req, res, next) {
+    try {
+        const userId = req.user?.sub;
+        const { first_name, last_name, bio, avatar_url } = req.body;
+ 
+        const result = await studentsService.updateStudentDetails({
+            userId,
+            first_name,
+            last_name,
+            bio,
+            avatar_url,
+        });
+ 
+        res.json(result);
     } catch (err) {
         next(err);
     }

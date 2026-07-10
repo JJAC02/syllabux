@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as studentsController from '../controllers/students.js';
 import { auth } from '../middleware/auth.js';
+import { requireRole } from '../middleware/requireRole.js'
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.use(auth);
 router.get('/', studentsController.loadDashboard);
 router.get('/s', studentsController.loadStudent);
 router.post('/enroll', studentsController.enrollStudent);
-// router.post('/update', studentsController.updateStudentDetails);
-// router.post('/remove', studentsController.deleteStudent);
+router.post('/update', studentsController.updateStudentDetails);
+router.post('/remove', requireRole('admin'), studentsController.deleteStudent);
 
 export default router;
