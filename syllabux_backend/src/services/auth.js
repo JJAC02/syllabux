@@ -27,11 +27,19 @@ export async function register({
       'SELECT user_id, first_name, last_name, email, role FROM Users WHERE user_id = ?',
       [result.insertId]
     );
-    
-    const student = rows[0];
+    if(role === 'student') {
+    const user = rows[0];
     await conn.query(
-      `INSERT INTO Students (user_id) VALUES (?)`, [student.user_id]
+      `INSERT INTO Students (user_id) VALUES (?)`, [user.user_id]
     );
+    }
+    //Still unsure as there is an application to becone an instructor so no one is registered as an instructor directly
+    if(role === 'instructor') {
+    const user = rows[0];
+    await conn.query(
+      `INSERT INTO Instructors (user_id) VALUES (?)`, [user.user_id]
+    );
+    }
     
     await conn.commit();
     return rows[0];
